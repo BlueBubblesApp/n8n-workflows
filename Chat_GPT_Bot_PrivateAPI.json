@@ -1,0 +1,230 @@
+{
+  "name": "BlueBubbles Chat GPT Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bluebubbles",
+        "options": {}
+      },
+      "id": "db3e0322-b5f4-4c1b-bb9a-36bcfed6731e",
+      "name": "Wait for BlueBubbles Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        220,
+        300
+      ],
+      "webhookId": "633f39a8-5f07-4a84-8f16-fdfe240abb02"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://<server ip>:1234/api/v1/message/text",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatGuid",
+              "value": "={{ $node[\"Wait for BlueBubbles Message\"].json.body.data.chats[0].guid }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.choices[0].text.replace('?\\n\\n', '').replace('.\\n\\n', '').trim() }}"
+            },
+            {
+              "name": "method",
+              "value": "private-api"
+            },
+            {
+              "name": "subject",
+              "value": "Chat GPT"
+            },
+            {
+              "name": "selectedMessageGuid",
+              "value": "={{ $node[\"Wait for BlueBubbles Message\"].json.body.data.guid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6c3b4bb8-8bdf-48e3-af7a-371ec8d390b1",
+      "name": "Send Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1460,
+        300
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "1",
+          "name": "BlueBubbles"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "prompt": "={{ $node[\"Wait for BlueBubbles Message\"].json[\"body\"][\"data\"][\"text\"] }}",
+        "simplifyOutput": false,
+        "options": {
+          "maxTokens": 100
+        }
+      },
+      "id": "7fa188ad-48ff-4597-b369-e0a943075eb5",
+      "name": "OpenAI",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        300
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "Chat GPT API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json[\"body\"][\"data\"][\"text\"] }}",
+              "operation": "startsWith",
+              "value2": "!"
+            }
+          ]
+        }
+      },
+      "id": "e4eceb7a-56af-494f-bee8-e4bde17bbc45",
+      "name": "Check Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.data.chats[0].guid }}",
+              "value2": "<Some Chat GUID>"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "1067a703-88f8-4cca-8a9b-b1cb1ce1baec",
+      "name": "Check Chat",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "request",
+              "value": "={{ $node[\"Wait for BlueBubbles Message\"].json[\"body\"][\"data\"][\"text\"].slice(1) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2d5d8c49-a241-4d78-a6c8-2f0d40a2bd65",
+      "name": "Get Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait for BlueBubbles Message": {
+      "main": [
+        [
+          {
+            "node": "Check Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Command": {
+      "main": [
+        [
+          {
+            "node": "Check Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Chat": {
+      "main": [
+        [
+          {
+            "node": "Get Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Query": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "d567f62e-384a-4c75-a97f-031e22b359ad",
+  "id": "1",
+  "meta": {
+    "instanceId": "bcb8c233162ce30f4c810d77efbff008d2d623a2d55f9a9ddf35946769b499c3"
+  },
+  "tags": []
+}
