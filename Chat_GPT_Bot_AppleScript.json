@@ -45,11 +45,7 @@
             },
             {
               "name": "method",
-              "value": "private-api"
-            },
-            {
-              "name": "subject",
-              "value": "Chat GPT"
+              "value": "apple-script"
             }
           ]
         },
